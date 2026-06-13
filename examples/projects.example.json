@@ -1,0 +1,22 @@
+[
+  {
+    "id": "lumen",
+    "name": "Lumen — Semantic Search",
+    "description": "Vector search platform indexing 500GB of media using CLIP embeddings into Qdrant.",
+    "outcome": "10,500x speedup on filtered count via Qdrant payload index.",
+    "tech_stack": ["Python", "FastAPI", "Qdrant", "CLIP", "Kubernetes"],
+    "url": "https://github.com/odanree/semantic-media-pipeline",
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "example-no-github",
+    "name": "A project without a GitHub URL",
+    "description": "This entry is skipped — the agent only audits projects with a github.com URL.",
+    "outcome": null,
+    "tech_stack": ["Whatever"],
+    "url": "https://example.com",
+    "start_date": null,
+    "end_date": null
+  }
+]

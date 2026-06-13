@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+
+# Run outputs
+output/
+drift_*.md
+drift_*.json
+eval_result.*
+
+# Operator's actual patch config (use examples/*.example.json as template)
+drift_patches.json
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local

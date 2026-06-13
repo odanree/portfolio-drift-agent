@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portfolio-drift-agent"
+version = "0.1.0"
+description = "Audit a portfolio of projects against GitHub for drift and propose grounded edits via LLM-as-judge."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Danh Le" }]
+keywords = ["llm", "agent", "portfolio", "audit", "github", "drift", "anthropic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "anthropic>=0.40.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.7",
+]
+
+[project.scripts]
+drift-agent = "drift_agent.cli:main"
+drift-apply-beacon = "drift_agent.apply_beacon:main"
+
+[project.urls]
+Repository = "https://github.com/odanree/portfolio-drift-agent"
+Issues = "https://github.com/odanree/portfolio-drift-agent/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["drift_agent*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long — formatter handles
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--tb=short -q"
