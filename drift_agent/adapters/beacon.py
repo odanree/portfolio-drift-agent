@@ -59,8 +59,7 @@ class BeaconAdapter:
         log.info("BeaconAdapter: pulled %d projects from %s", len(out), self._base)
         return out
 
-    # ── Write-side (used by tools/apply_drift_patches.py) ──────────────────────
-    # Beacon's projects API has no PATCH — apply is delete-then-recreate.
+    # ── Write-side (used by apply_beacon and the MCP server) ─────────────────
 
     def fetch_one_raw(self, project_id: str) -> dict | None:
         r = self._client.get("/api/profile/projects")
@@ -70,13 +69,10 @@ class BeaconAdapter:
                 return p
         return None
 
-    def delete_project(self, project_id: str) -> bool:
-        r = self._client.delete(f"/api/profile/projects/{project_id}")
-        return r.status_code in (200, 204)
-
-    def create_project(self, payload: dict) -> str | None:
-        r = self._client.post("/api/profile/projects", json=payload)
-        if r.status_code not in (200, 201):
-            log.error("BeaconAdapter: create failed %s — %s", r.status_code, r.text[:200])
-            return None
-        return r.json().get("id")
+    def patch_project(self, project_id: str, payload: dict) -> bool:
+        """PATCH only the fields supplied in payload. Returns True on 2xx."""
+        r = self._client.patch(f"/api/profile/projects/{project_id}", json=payload)
+        if r.status_code not in (200, 204):
+            log.error("BeaconAdapter: patch failed %s — %s", r.status_code, r.text[:200])
+            return False
+        return True

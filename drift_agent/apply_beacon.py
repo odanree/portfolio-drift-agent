@@ -1,8 +1,8 @@
 """Apply curated drift suggestions to Beacon (the only adapter with mutate support).
 
 Reads a JSON patches config (see examples/drift_patches.example.json), prints
-intent in a dry-run by default, applies with --apply. Each apply is
-delete-then-recreate because Beacon's project API has no PATCH endpoint.
+intent in a dry-run by default, applies with --apply. Each apply sends a
+PATCH with only the changed fields, so the project id stays stable.
 """
 
 from __future__ import annotations
@@ -60,22 +60,20 @@ def load_patches(config_path: Path) -> list[DriftPatch]:
 
 
 def _build_payload(existing: dict, patch: DriftPatch) -> dict:
-    current_tech = list(existing.get("tech_stack") or [])
-    new_tech = [t for t in current_tech if t not in patch.tech_removals]
-    for add in patch.tech_additions:
-        if add not in new_tech:
-            new_tech.append(add)
-    return {
-        "name": existing["name"],
-        "description": (
-            patch.description if patch.description is not None else existing.get("description")
-        ),
-        "url": existing.get("url"),
-        "tech_stack": new_tech,
-        "outcome": patch.outcome if patch.outcome is not None else existing.get("outcome"),
-        "start_date": existing.get("start_date"),
-        "end_date": existing.get("end_date"),
-    }
+    """Build a PATCH delta — only fields the patch actually changes."""
+    payload: dict = {}
+    if patch.description is not None:
+        payload["description"] = patch.description
+    if patch.outcome is not None:
+        payload["outcome"] = patch.outcome
+    if patch.tech_additions or patch.tech_removals:
+        current_tech = list(existing.get("tech_stack") or [])
+        new_tech = [t for t in current_tech if t not in patch.tech_removals]
+        for add in patch.tech_additions:
+            if add not in new_tech:
+                new_tech.append(add)
+        payload["tech_stack"] = new_tech
+    return payload
 
 
 def _log_intent(patch: DriftPatch) -> None:
@@ -96,14 +94,13 @@ def _apply_one(adapter: BeaconAdapter, patch: DriftPatch) -> bool:
         log.error("Project %s (%s) not found on Beacon", patch.project_id, patch.name_hint)
         return False
     payload = _build_payload(existing, patch)
-    if not adapter.delete_project(patch.project_id):
-        log.error("Delete failed for %s", patch.project_id)
+    if not payload:
+        log.info("    no-op (patch has no field changes)")
+        return True
+    if not adapter.patch_project(patch.project_id, payload):
+        log.error("Patch failed for %s; payload: %s", patch.project_id, json.dumps(payload)[:300])
         return False
-    new_id = adapter.create_project(payload)
-    if not new_id:
-        log.error("Recreate failed; payload: %s", json.dumps(payload)[:300])
-        return False
-    log.info("    OK: new id = %s", new_id)
+    log.info("    OK: patched id = %s", patch.project_id)
     return True
 
 
@@ -134,8 +131,6 @@ def main() -> int:
     successes = sum(1 for patch in patches if _apply_one(adapter, patch))
     print()
     print(f"  Applied {successes}/{len(patches)} patches")
-    if successes:
-        print("  Next: re-backfill any downstream index (e.g. Beacon's project_overviews).")
     return 0 if successes == len(patches) else 1
 
 
