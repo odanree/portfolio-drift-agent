@@ -37,7 +37,7 @@ def main() -> int:
     parser.add_argument(
         "--limit",
         type=int,
-        default=int(os.getenv("DRIFT_LIMIT", "0")) or None,
+        default=int(os.getenv("DRIFT_LIMIT") or "0") or None,
         help="stop after N projects (for smoke tests; default: all)",
     )
     parser.add_argument(
